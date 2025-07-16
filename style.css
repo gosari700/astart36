@@ -1,0 +1,510 @@
+/* 전체 스타일 리셋 - 모든 요소의 테두리와 외곽선 제거 */
+* {
+  box-sizing: border-box;
+}
+
+/* 이미지 관련 요소들에 테두리 제거 */
+img, image, video, #sentenceImage, #sentenceVideo {
+  border: 0 none transparent !important;
+  outline: 0 none transparent !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 상단 동영상 플레이어 컨트롤 위치 조정 */
+#sentenceVideo::-webkit-media-controls-panel,
+#sentenceVideo::-moz-media-controls-panel,
+#sentenceVideo::media-controls-panel {
+  transform: translateY(3px) !important; /* 컨트롤 패널 전체를 3px 아래로 이동 */
+}
+
+#sentenceVideo::-webkit-media-controls-play-button,
+#sentenceVideo::-moz-media-controls-play-button,
+#sentenceVideo::media-controls-play-button {
+  transform: translateY(3px) !important; /* 플레이 버튼을 3px 아래로 이동 */
+}
+
+/* 추가 스타일로 하단 컨트롤 전체를 아래로 이동 */
+.custom-video-controls::-webkit-media-controls-enclosure,
+.custom-video-controls::-moz-media-controls-enclosure,
+.custom-video-controls::media-controls-enclosure {
+  margin-top: 3px !important;
+  padding-top: 3px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* 상단 동영상에서 타임라인, 시계, 스피커 버튼, 전체화면 버튼 제거 */
+#sentenceVideo::-webkit-media-controls-timeline,
+#sentenceVideo::-webkit-media-controls-time-remaining-display,
+#sentenceVideo::-webkit-media-controls-current-time-display,
+#sentenceVideo::-webkit-media-controls-mute-button,
+#sentenceVideo::-webkit-media-controls-volume-slider,
+#sentenceVideo::-webkit-media-controls-volume-slider-container,
+#sentenceVideo::-webkit-media-controls-fullscreen-button {
+  display: none !important;
+}
+
+/* 플레이 버튼을 시계 자리로 이동하고 크게 표시, y축으로 5px 위로, x축으로 4px 우측으로 이동 (6px 좌측 이동) */
+#sentenceVideo::-webkit-media-controls-play-button {
+  display: block !important;
+  position: relative !important;
+  margin-right: 10px !important;
+  transform: scale(1.5) translate(4px, -5px) !important; /* 플레이 버튼 크기 확대 및 x축 4px, y축 -5px 이동(x축을 10px에서 4px로 변경하여 6px 좌측 이동) */
+}
+
+/* 비디오 컨트롤바 설정 - 패딩 추가하여 버튼 위치 조정 */
+#sentenceVideo::-webkit-media-controls-panel {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important; /* 플레이 버튼 중앙 정렬 */
+  padding-top: 120px !important; /* 패딩으로 컨트롤 패널 자체를 늘려 플레이 버튼 위치 조정 (90px에서 120px로 증가) */
+}
+
+/* 테두리 없음 특별 클래스 - 이미지의 흰 테두리 완전 제거용 */
+.no-border-at-all {
+  border: 0 none transparent !important;
+  outline: 0 none transparent !important;
+  -webkit-tap-highlight-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background-clip: content-box !important;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: black;
+}
+#gameCanvas {
+  display: block;
+  touch-action: none;
+  -ms-touch-action: none;
+  background-color: black;
+}
+/* 메뉴 중앙 정렬 유지 */
+#topControls {
+  position: fixed;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+#topControls button {
+  color: #fff;
+  border: none;
+  padding: 6px 14px; /* 패딩 약간 증가로 더 부드러운 형태 */
+  font-size: 16px;
+  border-radius: 50px; /* 완전한 알약 모양 (pill shape) */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25); /* 그림자 강화 */
+  transition: all 0.2s ease; /* 부드러운 호버 효과 */
+  overflow: hidden; /* 내용이 모서리를 벗어나지 않도록 */
+  min-width: 70px; /* 버튼 최소 너비 설정 */
+  position: relative;
+  z-index: 1;
+  transform-style: preserve-3d; /* 3D 효과 */
+}
+#topControls button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15); /* 내부 테두리로 더 부드러운 느낌 */
+  z-index: -1;
+}
+#topControls button:hover {
+  transform: translateY(-1px); /* 호버 시 약간 위로 이동 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35); /* 호버 시 그림자 더 강화 */
+  filter: brightness(1.1); /* 호버 시 약간 밝아지는 효과 */
+}
+
+#topControls button:active {
+  transform: translateY(1px); /* 클릭 시 약간 아래로 이동 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* 클릭 시 그림자 약화 */
+  filter: brightness(0.95); /* 클릭 시 약간 어두워지는 효과 */
+}
+
+#topControls .start-btn {
+  background: linear-gradient(to bottom, #1dd01d, #16c016); /* 그라데이션 추가 */
+  border-radius: 20px; /* START 버튼 모서리 완전히 둥글게 */
+  overflow: hidden;
+}
+#topControls .pause-btn {
+  background: linear-gradient(to bottom, #ffd717, #ffcb05); /* 그라데이션 추가 */
+  color: #222;
+  border-radius: 20px; /* PAUSE 버튼 모서리 완전히 둥글게 */
+  overflow: hidden;
+}
+#topControls .stop-btn {
+  background: linear-gradient(to bottom, #f04a47, #e53935); /* 그라데이션 추가 */
+  border-radius: 20px; /* STOP 버튼 모서리 완전히 둥글게 */
+  overflow: hidden;
+}
+
+/* 볼륨 버튼: 배경/테두리 없음, 오른쪽 상단 끝에 고정 */
+#volumeBtn.volume-btn {
+  position: fixed;
+  top: 10px;
+  right: 15px; /* 우측으로 총 9px 이동 (24px → 15px) */
+  background: transparent !important;
+  border: none !important;
+  color: #fff;
+  font-size: 18px;
+  padding: 0 6px;
+  z-index: 20;
+  box-shadow: none !important;
+  outline: none !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  transition: none;
+}
+#volumeBtn.volume-btn:hover,
+#volumeBtn.volume-btn:active,
+#volumeBtn.volume-btn:focus {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* 드롭다운 버튼 스타일 */
+#sentenceDropdown {
+  position: fixed;
+  top: -17px; /* 이전 위치 -13px에서 4px 위로 이동 */
+  left: 1px; /* x축 좌측으로 4px 이동 (원래 5px → 1px) */
+  z-index: 999; /* 최상위 레이어로 설정 */
+  display: flex;
+  align-items: center;
+}
+
+#dropdownBtn {
+  background: transparent !important; /* 배경 제거 */
+  border: none !important; /* 테두리 제거 */
+  color: #fff;
+  font-size: 47px !important; /* 39px에서 20% 증가 = 약 47px */
+  padding: 5px 12px;
+  cursor: pointer;
+  outline: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px; /* 57px에서 20% 증가 = 약 68px */
+  min-height: 68px; /* 57px에서 20% 증가 = 약 68px */
+  box-shadow: none !important; /* 그림자 제거 */
+  user-select: none; /* 텍스트 선택 방지 */
+  -webkit-tap-highlight-color: transparent; /* 모바일 터치 하이라이트 제거 */
+}
+
+#dropdownBtn:hover,
+#dropdownBtn:active,
+#dropdownBtn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #fff;
+}
+
+/* 문장 목록 컨테이너 스타일 */
+#sentenceList {
+  display: none;  position: absolute;  top: 95px; /* 메뉴 아이콘 하단에서 30px 여백 확보 */
+  left: -5px; /* 전체 문장 목록을 왼쪽으로 5px 이동 */
+  background-color: rgba(0, 0, 0, 0.9);  /* border 제거: 테두리 실선 제거 */
+  max-height: calc(100vh - 190px); /* 상단 95px + 하단 95px의 여백을 제외한 높이 */
+  overflow-y: scroll; /* auto 대신 항상 스크롤바 표시 */  -webkit-overflow-scrolling: touch; /* 모바일 스크롤 개선 */
+  width: 590px; /* 약간 더 넓힘 */
+  border-radius: 4px;
+  z-index: 10000; /* 미디어창(9999)보다 높은 z-index 설정 */
+  scrollbar-width: auto;
+  scrollbar-color: #666 #222;  overscroll-behavior: contain; /* 스크롤 중 부모 요소 스크롤 방지 */  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  padding-top: 15px; /* 내부 상단 여백 15px (외부 여백은 이미 top 속성으로 확보) */
+  padding-bottom: 15px; /* 내부 하단 여백 15px */
+}
+
+/* 스크롤바 스타일 */
+.sentence-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+.sentence-list::-webkit-scrollbar-track {
+  background: #222;
+}
+
+.sentence-list::-webkit-scrollbar-thumb {
+  background-color: #666;
+  border-radius: 6px;
+  border: 2px solid #222;
+}
+
+/* 문장 목록 아이템 스타일 */
+.sentence-item {  color: white;
+  padding: 3px 7px; /* 좌측 패딩을 5px 줄여서 전체 문장을 왼쪽으로 이동 */
+  cursor: pointer;
+  text-align: left;
+  font-size: 17.1px; /* 기존 크기의 95%로 줄임 (18px의 95% = 17.1px) */
+  /* border-bottom 제거: 문장 사이의 하얀 실선 제거 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;  line-height: 1.4; /* 줄 간격을 1.2에서 1.4로 늘림 */
+  margin-bottom: 10px; /* 기본 간격을 10px로 설정 */
+  font-family: Arial, 'Malgun Gothic', 'Nanum Gothic', sans-serif;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  touch-action: manipulation;
+}
+
+.sentence-item:active, .sentence-text:active, .sentence-number:active,
+.sentence-item:focus, .sentence-text:focus, .sentence-number:focus {
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 홀수 문장(의문문)에 대한 스타일 - 배경색 제거 */
+.question-sentence {
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  /* text-shadow 등 모든 효과 제거 */
+}
+
+/* 짝수 번호 문장(답변)에 아래 여백 추가 - 대화 쌍 구분용 */
+.answer-sentence {
+  margin-bottom: 35px !important; /* 기본 10px에서 크게 증가한 35px로 설정하고 !important 추가 */
+  padding-bottom: 5px; /* 텍스트 아래 여백 유지 */
+}
+
+.sentence-item:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px; /* hover 상태에서도 둥글게 모서리 유지 */
+}
+
+/* 홀수/짝수 문장 스타일 구분 */
+.sentence-item.question-sentence {
+  border-radius: 3px;
+  /* text-shadow 등 모든 효과 제거 */
+}
+
+/* 문장 번호 스타일 */
+.sentence-number {
+  display: inline-block;
+  min-width: 40px;
+  margin-left: 3px; /* 번호를 우측으로 3px 이동 */
+  margin-right: 3px; /* 8px에서 5px 줄여 3px로 변경하여 문장 시작을 좌측으로 5px 이동 */
+  font-weight: bold;
+  color: #16c016;
+  font-size: 18.5px; /* 기존 17.96px의 103% */
+  background: transparent !important;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  touch-action: manipulation;
+}
+
+.sentence-item:hover .sentence-number {
+  background: transparent !important;
+}
+
+#sentenceImageContainer {
+  position: fixed;
+  top: 45px; /* 메뉴 아이콘 아래에 여백을 두고 위치하도록 조정 (55px에서 10px 올림) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15; /* 다른 요소들 위에 오도록 설정 */
+  display: none; /* 기본적으로 숨김 */
+  border: 0 none transparent !important;
+  box-shadow: none !important;
+  outline: 0 none transparent !important;
+}
+
+#sentenceImage {
+  max-width: 100.24vw; /* 화면 너비의 100.24%를 넘지 않도록 설정 (마지막 1% 증가) */
+  max-height: 50.13vh; /* 화면 높이의 50.13%를 넘지 않도록 설정 (마지막 1% 증가) */
+  border-radius: 0 !important; /* 모서리 둥글기 완전 제거 */
+  box-shadow: none !important; /* 그림자 완전 제거 */
+  border: 0 none transparent !important; /* 테두리 완전 제거 */
+  outline: 0 none transparent !important; /* 외곽선 완전 제거 */
+  background-color: transparent !important; /* 배경색 투명 */
+  transform: scale(0); /* 초기 크기를 0으로 설정 */
+  opacity: 0; /* 초기 투명도를 0으로 설정 */
+  object-fit: cover !important; /* 비율 유지하며 컨테이너에 맞춤 - 동영상과 동일하게 cover로 변경 */
+  object-position: center -45px !important; /* 상단 45px 크롭 - 동영상과 동일하게 설정 */
+  transition: opacity 2s ease-in, transform 2s ease-in; /* 비디오와 동일하게 2초 트랜지션 효과 적용 */
+}
+
+/* 이미지가 나타날 때의 애니메이션 클래스 - CSS에서는 사용하지 않고 JS에서 직접 스타일 적용 */
+#sentenceImage.show {
+  transform: scale(1) !important; /* 원본 크기로 확대 */
+  opacity: 1 !important; /* 완전 불투명으로 변경 */
+}
+
+/* 동영상 요소에 대한 스타일 */
+#sentenceVideo {
+  max-width: 100.24vw; /* 화면 너비의 100.24%를 넘지 않도록 설정 */
+  max-height: 50.13vh; /* 화면 높이의 50.13%를 넘지 않도록 설정 */
+  border-radius: 0 !important; /* 모서리 둥글기 완전 제거 */
+  box-shadow: none !important; /* 그림자 완전 제거 */
+  border: 0 none transparent !important; /* 테두리 완전 제거 */
+  outline: 0 none transparent !important; /* 외곽선 완전 제거 */
+  background-color: transparent !important; /* 배경색 투명 */
+  transform: scale(0); /* 초기 크기를 0으로 설정 */
+  opacity: 0; /* 초기 투명도를 0으로 설정 */
+  transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 1.5초 ease-out 애니메이션 */
+  object-fit: cover !important; /* 비율 유지하며 컨테이너에 맞춤 */
+  object-position: center -45px !important; /* 상단 45px 크롭 (윗부분을 -45px 위치로 이동) */
+}
+
+/* 동영상 컨트롤러 바의 검은색 반투명 배경만 투명하게 처리 */
+#sentenceVideo::-webkit-media-controls-panel {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+#sentenceVideo::-webkit-media-controls-enclosure {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* 동영상 컨트롤러 바(타임라인) 숨기기 */
+#sentenceVideo::-webkit-media-controls-timeline,
+video::-webkit-media-controls-timeline {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 동영상 중앙 플레이 버튼 숨기기 */
+#sentenceVideo::-webkit-media-controls-overlay-play-button,
+video::-webkit-media-controls-overlay-play-button {
+  opacity: 0 !important; /* 버튼 완전히 숨김 */
+  visibility: hidden !important; /* 버튼 숨김 */
+  display: none !important; /* 버튼 요소 자체를 숨김 */
+  pointer-events: none !important; /* 클릭 이벤트 차단 */
+}
+
+/* 동영상 컨트롤러 요소들이 제대로 보이고 작동하도록 추가 스타일 */
+#sentenceVideo::-webkit-media-controls,
+video::-webkit-media-controls {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* 동영상 자체를 클릭했을 때도 재생/일시정지 가능하도록 설정 */
+#sentenceVideo, video {
+  cursor: pointer !important;
+}
+
+/* 하단 이미지/동영상 컨테이너 스타일 */
+#bottomImageContainer {
+  position: fixed;
+  bottom: -150vh; /* 초기 위치: 화면 밖으로 완전히 숨김 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15; /* 다른 요소들 위에 오도록 설정 */
+  display: none; /* 기본적으로 숨김 */
+  border: 0 none transparent !important;
+  box-shadow: none !important;
+  outline: 0 none transparent !important;
+}
+
+#bottomImage {
+  max-width: 100.24vw; /* 화면 너비의 100.24%를 넘지 않도록 설정 */
+  max-height: 100vh; /* 화면 높이의 100%까지 허용하도록 수정 */
+  border-radius: 0 !important; /* 모서리 둥글기 완전 제거 */
+  box-shadow: none !important; /* 그림자 완전 제거 */
+  border: 0 none transparent !important; /* 테두리 완전 제거 */
+  outline: 0 none transparent !important; /* 외곽선 완전 제거 */
+  background-color: transparent !important; /* 배경색 투명 */
+  opacity: 0; /* 초기 투명도를 0으로 설정 */
+  object-fit: cover !important; /* 비율 유지하며 컨테이너에 맞춤 */
+  object-position: center -80px !important; /* 윗부분 80px 크롭 (상단을 -80px 위치로 이동) */
+}
+
+/* 하단 이미지가 나타날 때의 애니메이션 클래스 */
+#bottomImage.show {
+  opacity: 1; /* 완전 불투명으로 변경 */
+}
+
+/* 하단 동영상 요소에 대한 스타일 */
+#bottomVideo {
+  max-width: 100.24vw; /* 화면 너비의 100.24%를 넘지 않도록 설정 */
+  max-height: 100vh; /* 화면 높이의 100%까지 허용하도록 수정 */
+  border-radius: 0 !important; /* 모서리 둥글기 완전 제거 */
+  box-shadow: none !important; /* 그림자 완전 제거 */
+  border: 0 none transparent !important; /* 테두리 완전 제거 */
+  outline: 0 none transparent !important; /* 외곽선 완전 제거 */
+  background-color: transparent !important; /* 배경색 투명 */
+  opacity: 0; /* 초기 투명도를 0으로 설정 */
+  object-fit: cover !important; /* 비율 유지하며 컨테이너에 맞춤 */
+  object-position: center -80px !important; /* 윗부분 80px 크롭 (상단을 -80px 위치로 이동) */
+}
+
+.sentence-text {
+  font-size: 19.5px; /* 기존 18.5px에서 1px 증가 */
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  touch-action: manipulation;
+}
+
+.dropdown-reading-bg {
+  background: rgba(30, 80, 220, 0.32) !important; /* 진한 파랑, 투명도 32% */
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.question-sentence, .sentence-item.question-sentence, .sentence-text, .sentence-item span {
+  text-shadow: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* 모든 비디오 요소의 컨트롤 3개 메뉴 완전 제거 */
+video::-webkit-media-controls-overflow-button,
+video::-webkit-media-controls-overflow-menu-button,
+video::-internal-media-controls-overflow-button,
+#sentenceVideo::-webkit-media-controls-overflow-button,
+#sentenceVideo::-webkit-media-controls-overflow-menu-button,
+#sentenceVideo::-internal-media-controls-overflow-button {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  right: -9999px !important;
+}
+
+/* Firefox용 추가 스타일 */
+video::-moz-media-controls-overflow-button {
+  display: none !important;
+}
+
+/* Edge용 추가 스타일 */
+video::-ms-media-controls-overflow-button {
+  display: none !important;
+}

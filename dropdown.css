@@ -1,0 +1,87 @@
+/* --- 스크롤바 디자인 --- */
+.sentence-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(80, 200, 80, 0.5) rgba(0, 0, 0, 0.2);
+}
+
+.sentence-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+.sentence-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.sentence-list::-webkit-scrollbar-thumb {
+  background-color: rgba(80, 200, 80, 0.5);
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+/* 드롭다운 버튼 개선 */
+.dropdown-button {
+  background: transparent;
+  border: none;
+  color: #16c016;
+  font-size: 17px;
+  padding: 5px 8px;
+  cursor: pointer;
+  outline: none;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+}
+
+#sentenceDropdown {
+  position: fixed;
+  top: 5px;
+  left: 10px;
+  z-index: 20;
+}
+
+/* 문장 목록 컨테이너 */
+.sentence-list {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 1px solid #444;
+  max-height: 85vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 590px;
+  border-radius: 4px;
+  z-index: 100;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  overscroll-behavior: contain;
+}
+
+/* 문장 항목 */
+.sentence-item {
+  color: white;
+  padding: 10px 12px 10px 2px; /* 왼쪽 패딩을 줄여서 전체 문장을 좌측으로 이동 */
+  cursor: pointer;
+  text-align: left;
+  font-size: 17.1px;
+  border-bottom: 1px solid #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.sentence-item:hover {
+  background-color: rgba(80, 200, 80, 0.2);
+}
+
+/* 문장 번호 */
+.sentence-number {
+  display: inline-block;
+  min-width: 40px;
+  margin-right: 8px;
+  font-weight: bold;
+  color: white;
+  font-size: 17.1px;
+}
+
+

@@ -1,0 +1,8 @@
+{
+  // Live Server를 로컬 IP로 바인딩
+  "liveServer.settings.host": "0.0.0.0",
+  // 네트워크 상의 다른 기기에서 접속 허용
+  "liveServer.settings.useLocalIp": true,
+  // 필요에 따라 기본 브라우저 자동 열기 끄기
+  "liveServer.settings.NoBrowser": true
+}
