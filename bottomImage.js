@@ -1098,11 +1098,23 @@ function showBottomImageContent(index) {
   
   // 이미지 설정
   bottomImage.style.display = 'block';
-  bottomImage.src = `images/bottom/${index}.jpg`;
   bottomImage.style.opacity = '0'; // 시작 투명도 초기화
+  
+  // 중복 방지를 위한 로딩 상태 추가
+  bottomImage.setAttribute('data-loading', 'true');
+  bottomImage.src = `images/bottom/${index}.jpg`;
   
   bottomImage.onload = function() {
     console.log(`하단 이미지 ${index}.jpg 로드 완료 - 애니메이션 시작, 현재 위치: ${bottomImageContainer.style.bottom}`);
+    
+    // 이미 애니메이션이 진행 중이면 무시
+    if (bottomImage.getAttribute('data-loading') !== 'true') {
+      console.log("이미 애니메이션이 진행 중 - 중복 실행 방지");
+      return;
+    }
+    
+    // 로딩 상태 해제
+    bottomImage.setAttribute('data-loading', 'false');
     
     // 컨테이너 위치 다시 한번 확인
     if (parseInt(bottomImageContainer.style.bottom || '-150') > -100) {
@@ -1121,6 +1133,8 @@ function showBottomImageContent(index) {
   bottomImage.onerror = function() {
     console.log(`하단 이미지 ${index}.jpg를 찾을 수 없습니다.`);
     bottomImageContainer.style.display = 'none';
+    // 에러 시에도 로딩 상태 해제
+    bottomImage.setAttribute('data-loading', 'false');
   };
 }
 
@@ -1164,10 +1178,22 @@ function showBottomVideoContent(index) {
   // 새 비디오를 로드하기 전에 음소거 상태와 오디오 종료 플래그를 명확하게 재설정
   bottomVideo.muted = false; // 명시적으로 음소거 해제
   isBottomAudioEnded = false; // 오디오 종료 플래그 초기화
+  
+  // 중복 방지를 위한 로딩 상태 추가
+  bottomVideo.setAttribute('data-loading', 'true');
   bottomVideo.src = `images/bottom/${index}.mp4`;
   
   bottomVideo.onloadeddata = function() {
     console.log(`하단 비디오 ${index}.mp4 로드 완료 - 애니메이션 시작, 현재 위치: ${bottomImageContainer.style.bottom}`);
+    
+    // 이미 애니메이션이 진행 중이면 무시
+    if (bottomVideo.getAttribute('data-loading') !== 'true') {
+      console.log("이미 애니메이션이 진행 중 - 중복 실행 방지");
+      return;
+    }
+    
+    // 로딩 상태 해제
+    bottomVideo.setAttribute('data-loading', 'false');
     
     // 컨테이너 위치 다시 한번 확인
     if (parseInt(bottomImageContainer.style.bottom || '-150') > -100) {
@@ -1190,6 +1216,8 @@ function showBottomVideoContent(index) {
   bottomVideo.onerror = function() {
     console.log(`하단 동영상 ${index}.mp4를 찾을 수 없습니다.`);
     bottomImageContainer.style.display = 'none';
+    // 에러 시에도 로딩 상태 해제
+    bottomVideo.setAttribute('data-loading', 'false');
   };
   
   // 비디오가 이미 다음 미디어로 넘어갔는지 확인하기 위한 플래그
