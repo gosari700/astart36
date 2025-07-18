@@ -255,83 +255,13 @@ const enemyImgs = [
 const bulletImg = new Image();
 bulletImg.src = 'images/bubble_bullet.png';
 
-// sounds 폴더의 모든 배경음악 파일을 순서대로 재생하는 시스템
-let bgmFiles = []; // 배경음악 파일 경로 배열
-let bgmIndex = 0;  // 현재 재생 중인 음악의 인덱스
-let bgmAudio = null; // 배경음악 오디오 객체
-
-// 파일 존재 여부 확인 함수
-function checkFileExists(url) {
-  return fetch(url, { method: 'HEAD', cache: 'no-store' })
-    .then(response => response.ok)
-    .catch(() => false);
-}
-
-// 배경음악 파일 목록 초기화
-function initBgmFiles() {
-  // 기존 목록 초기화
-  bgmFiles = [];
-  
-  // 배경음악 파일 검색 (최대 100개)
-  for (let i = 1; i <= 100; i++) {
-    const filepath = `sounds/background${i}.mp3`;
-    // 배열에 모든 파일 경로 추가
-    bgmFiles.push(filepath);
-  }
-}
-
-// 배경음악 목록 초기화
-initBgmFiles();
-
-// 초기 오디오 객체 생성
-bgmAudio = new Audio(bgmFiles[0]);
-
-// 볼륨 설정 - PC에서는 더 크게, 모바일에서는 작게
-const isMobileBGM = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-bgmAudio.volume = isMobileBGM ? 0.021 : 0.126;
-bgmAudio.loop = false; // 반복 재생 대신 onended 이벤트로 다음 곡 재생
-
-// 배경음악이 끝날 때 다음 음악으로 넘어가는 함수
-function playNextBgm() {
-  // 다음 음악 인덱스로 이동 (마지막 음악 재생 후 첫번째로 돌아가기)
-  bgmIndex = (bgmIndex + 1) % bgmFiles.length;
-  
-  // 한 바퀴 다 돌았으면 파일 목록 다시 초기화 (새 파일 추가 감지)
-  if (bgmIndex === 0) {
-    console.log("모든 배경음악 재생 완료, 다시 처음부터 재생");
-    initBgmFiles();
-  }
-  
-  console.log(`다음 배경음악 재생: ${bgmIndex+1}`);
-  
-  // 새 오디오 객체 생성
-  bgmAudio = new Audio(bgmFiles[bgmIndex]);
-  
-  // 재생 지연을 방지하기 위해 미리 로드
-  bgmAudio.preload = "auto";
-  
-  // 볼륨 설정
-  bgmAudio.volume = isMuted ? 0 : (isMobileBGM ? 0.021 : 0.126);
-  bgmAudio.loop = false;
-  
-  // 이벤트 핸들러 다시 설정
-  bgmAudio.onended = function() {
-    // 즉시 다음 곡 재생 (지연 없이)
-    playNextBgm();
-  };
-  
-  // 음악 재생 - 지연 없이 바로 시작
-  bgmAudio.play().catch(error => {
-    console.error('배경음악 재생 오류, 즉시 다음 곡으로 넘어갑니다');
-    // 오류 발생 시 즉시 다음 음악으로 넘어감 (지연 제거)
-    playNextBgm();
-  });
-}
-
-// 초기 이벤트 핸들러 설정
-bgmAudio.onended = function() {
-  playNextBgm();
-};
+const bgmFiles = [
+  'sounds/background.mp3'
+];
+let bgmIndex = 0;
+let bgmAudio = new Audio(bgmFiles[bgmIndex]);
+bgmAudio.volume = 0.021;
+bgmAudio.loop = true;
 
 const volumeBtn = document.getElementById('volumeBtn');
 let isMuted = false;
@@ -340,109 +270,6 @@ function updateVolumeIcon() {
 }
 
 let currentSentenceAudio = null;
-let originalBgmVolume = 0.021; // Store original BGM volume
-let isDucking = false;
-let duckingTimeout = null;
-let lastSoundTime = 0; // Track when last sound was played
-let gameInProgress = false; // Track if game is in progress
-let silenceCheckInterval = null;
-
-// Enhanced background music ducking system
-function startGameDucking() {
-  if (!gameInProgress) {
-    gameInProgress = true;
-    // Detect if mobile for volume calculation
-    const isMobileDuck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    originalBgmVolume = isMobileDuck ? 0.021 : 0.126;
-    
-    if (bgmAudio && !isMuted && !isDucking) {
-      isDucking = true;
-      // Gradually reduce BGM volume to 4% of original (60% more reduction from 10%)
-      const targetVolume = originalBgmVolume * 0.04;
-      fadeVolume(bgmAudio, bgmAudio.volume, targetVolume, 200);
-    }
-    
-    // Start checking for silence
-    startSilenceCheck();
-  }
-}
-
-function recordSoundActivity() {
-  lastSoundTime = Date.now();
-}
-
-function startSilenceCheck() {
-  // Clear any existing interval
-  if (silenceCheckInterval) {
-    clearInterval(silenceCheckInterval);
-  }
-  
-  silenceCheckInterval = setInterval(() => {
-    const now = Date.now();
-    const timeSinceLastSound = now - lastSoundTime;
-    
-    // If 10 seconds of silence and game is in progress, restore BGM
-    if (timeSinceLastSound >= 10000 && gameInProgress && isDucking) {
-      restoreBGMAfterSilence();
-    }
-  }, 1000); // Check every second
-}
-
-function restoreBGMAfterSilence() {
-  gameInProgress = false;
-  isDucking = false;
-  
-  if (silenceCheckInterval) {
-    clearInterval(silenceCheckInterval);
-    silenceCheckInterval = null;
-  }
-  
-  if (bgmAudio && !isMuted) {
-    fadeVolume(bgmAudio, bgmAudio.volume, originalBgmVolume, 1000);
-  }
-}
-
-// Legacy function for backwards compatibility
-function duckBGM() {
-  recordSoundActivity();
-  if (!gameInProgress) {
-    startGameDucking();
-  }
-}
-
-function restoreBGM() {
-  recordSoundActivity();
-}
-
-let currentFadeInterval = null;
-
-function fadeVolume(audio, startVolume, endVolume, duration) {
-  // Clear any existing fade
-  if (currentFadeInterval) {
-    clearInterval(currentFadeInterval);
-  }
-  
-  const steps = 20;
-  const stepDuration = duration / steps;
-  const volumeStep = (endVolume - startVolume) / steps;
-  let currentStep = 0;
-  
-  currentFadeInterval = setInterval(() => {
-    currentStep++;
-    const newVolume = startVolume + (volumeStep * currentStep);
-    if (audio && !audio.paused) {  // Check if audio still exists
-      audio.volume = Math.max(0, Math.min(1, newVolume));
-    }
-    
-    if (currentStep >= steps) {
-      clearInterval(currentFadeInterval);
-      currentFadeInterval = null;
-      if (audio && !audio.paused) {
-        audio.volume = endVolume;
-      }
-    }
-  }, stepDuration);
-}
 
 async function playSentenceAudio(index) {
   return new Promise((resolve, reject) => {
@@ -457,19 +284,12 @@ async function playSentenceAudio(index) {
     currentSentenceAudio = new Audio(audioFilePath);
     currentSentenceAudio.volume = 0.8;
 
-    // Duck background music when sentence audio starts
-    duckBGM();
-
     currentSentenceAudio.onended = () => {
       currentSentenceAudio = null;
-      // Record that sentence audio ended (activity)
-      recordSoundActivity();
     };
     currentSentenceAudio.onerror = (e) => {
       console.error(`Error playing sentence audio: ${audioFilePath}`, e);
       currentSentenceAudio = null;
-      // Record activity even on error
-      recordSoundActivity();
       reject(e);
     };
 
@@ -478,8 +298,6 @@ async function playSentenceAudio(index) {
     }).catch(e => {
       console.error(`Failed to play ${audioFilePath}`, e);
       currentSentenceAudio = null;
-      // Record activity even on play error
-      recordSoundActivity();
       reject(e);
     });
   });
@@ -488,38 +306,13 @@ async function playSentenceAudio(index) {
 
 volumeBtn.onclick = function () {
   isMuted = !isMuted;
-  // Set volume - 50% louder for PC, normal for mobile
-  const isMobileVolumeBtn = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const targetVolume = isMuted ? 0 : (isMobileVolumeBtn ? 0.021 : 0.126);
-  
-  // 기존 BGM 오디오 제어
+  const targetVolume = isMuted ? 0 : 0.021;
   if (bgmAudio) {
     bgmAudio.volume = targetVolume;
     if (!isMuted && bgmAudio.paused && isGameRunning && !isGamePaused) {
       bgmAudio.play().catch(e => console.error("BGM play on unmute error:", e));
     }
   }
-  
-  updateVolumeIcon();
-  
-  // 배경음악 플레이어 제어 (추가)
-  const backgroundMusicPlayer = document.getElementById('backgroundMusicPlayer');
-  if (backgroundMusicPlayer) {
-    if (isMuted) {
-      backgroundMusicPlayer.volume = 0;
-      // 음소거 상태에서는 일시 중지하지 않고 무음으로만 설정
-    } else {
-      // 음소거 해제 시 볼륨 복원
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      backgroundMusicPlayer.volume = isMobile ? 0.021 : 0.164;
-      
-      // 음소거 해제 시 배경음악이 일시중지 상태였다면 다시 재생
-      if (backgroundMusicPlayer.paused && !isGamePaused) {
-        backgroundMusicPlayer.play().catch(e => console.error("Background music play error:", e));
-      }
-    }
-  }
-  
   updateVolumeIcon();
 };
 updateVolumeIcon();
@@ -529,19 +322,12 @@ const sounds = {
   shoot: new Audio('sounds/shoot.mp3'),
   explosion: new Audio('sounds/explosion.mp3')
 };
-
-// Detect if device is mobile
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-// Set volume - PC에서 더 크게, mobile은 그대로
-sounds.shoot.volume = isMobile ? 0.05 : 0.3;  // PC에서 총소리 더 크게 (0.2에서 50% 증가)
-sounds.explosion.volume = isMobile ? 0.05 : 0.13;  // PC에서 2배 볼륨
+sounds.shoot.volume = 0.05;
+sounds.explosion.volume = 0.05;
 
 setInterval(() => {
   if (bgmAudio) {
-    // Set volume - 50% louder for PC, normal for mobile
-    const isMobileInterval = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const targetVolume = isMuted ? 0 : (isMobileInterval ? 0.021 : 0.126);
+    const targetVolume = isMuted ? 0 : 0.021;
     if (bgmAudio.volume !== targetVolume) {
       bgmAudio.volume = targetVolume;
     }
@@ -3953,8 +3739,6 @@ function update(delta) {
             startFireworks(sentenceToFirework, globalIndexOfSentence, e.x + e.w / 2, e.y + e.h / 2);
             sentenceIndex = (sentenceIndex + 1) % sentences.length;
             localStorage.setItem('sentenceIndex', sentenceIndex.toString());
-            // Duck background music and play explosion sound
-            duckBGM();
             sounds.explosion.play();
             
             // 폭발 횟수 증가 및 첫 번째 폭발에서 하단 미디어 시작
@@ -4174,35 +3958,15 @@ function startGame() {
   if (bgmAudio) { 
     bgmAudio.pause(); 
   }
-  
-  // 게임 시작 시 배경음악 파일 목록 초기화
-  initBgmFiles();
-  
-  // 게임 시작 시 항상 첫 번째 음악부터 재생
-  bgmIndex = 0;
   bgmAudio = new Audio(bgmFiles[bgmIndex]);
-  
-  // 재생 지연을 방지하기 위해 미리 로드 설정
-  bgmAudio.preload = "auto";
-  
-  // Set BGM volume - 50% louder for PC, normal for mobile
-  const isMobileBGMGame = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  bgmAudio.volume = isMuted ? 0 : (isMobileBGMGame ? 0.021 : 0.126); 
-  bgmAudio.loop = false; // 끝나면 다음 음악으로 넘어가도록 loop 비활성화
-  
-  // 배경음악이 끝났을 때 다음 음악 재생
-  bgmAudio.onended = function() {
-    // 즉시 다음 곡 재생 (지연 없이)
-    playNextBgm();
-  };
+  bgmAudio.volume = isMuted ? 0 : 0.021; 
+  bgmAudio.loop = true;
   
   // 배경 음악 재생
   const playPromise = bgmAudio.play();
   if (playPromise !== undefined) {
     playPromise.catch(error => { 
-      console.error('BGM play error on start:', error);
-      // 첫 번째 음악 재생 실패 시 즉시 다음 음악 시도
-      playNextBgm();
+      console.error('BGM play error on start:', error); 
     });
   }
   if (coffeeSteamVideo && coffeeVideoAssetReady) {
@@ -4273,12 +4037,7 @@ function togglePause() {
   } else {
     pauseButton.textContent = 'PAUSE';
     if (bgmAudio && bgmAudio.paused && !isMuted) {
-      // 일시정지 후 재생 재개
-      bgmAudio.play().catch(e => {
-        console.error("BGM resume error:", e);
-        // 오류 발생 시 다음 곡으로 넘어감
-        setTimeout(playNextBgm, 500);
-      });
+        bgmAudio.play().catch(e => console.error("BGM resume error:", e));
     }
     if (coffeeSteamVideo && coffeeSteamVideo.paused && coffeeVideoAssetReady) {
         coffeeSteamVideo.play().catch(error => console.error("Error resuming coffee steam video:", error));
@@ -4548,10 +4307,7 @@ function handleCanvasInteraction(clientX, clientY, event) {
     swayAmplitude: size * (BUBBLE_SWAY_AMPLITUDE_FACTOR_MIN + Math.random() * (BUBBLE_SWAY_AMPLITUDE_FACTOR_MAX - BUBBLE_SWAY_AMPLITUDE_FACTOR_MIN)),
     swayPhaseOffset: Math.random() * Math.PI * 2,
     driftXPerSecond: (Math.random() - 0.5) * 2 * BUBBLE_HORIZONTAL_DRIFT_PPS_MAX,
-  });  
-  // Duck background music and play shoot sound
-  duckBGM();
-  sounds.shoot.play();
+  });  sounds.shoot.play();
     // 탄환 발사 시 모든 클론들 제거 및 모든 플래그 리셋 (새로운 사이클 시작)
   console.log("🚀 Bullet fired - clearing all clones and resetting all clone flags for fresh cycle");
   clearQuestionWordClones(); // 모든 클론 제거

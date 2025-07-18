@@ -32,9 +32,8 @@
     <button id="pauseBtn" class="pause-btn">PAUSE</button>
     <button id="stopBtn" class="stop-btn">STOP</button>
   </div>
-  <!-- 볼륨버튼: 오른쪽 상단에 별도 위치 (배경음악 제어 포함) -->
-  <button id="volumeBtn" class="volume-btn" title="음소거 & 배경음악 제어">🔊</button>
-  <!-- 문장 이미지/동영상 표시를 위한 컨테이너 -->
+  <!-- 볼륨버튼: 오른쪽 상단에 별도 위치 -->
+  <button id="volumeBtn" class="volume-btn">🔊</button>  <!-- 문장 이미지/동영상 표시를 위한 컨테이너 -->
   <div id="sentenceImageContainer" class="no-border-at-all" style="position:fixed !important; border:0 none transparent !important; box-shadow:none !important; outline:0 none transparent !important; background-color:transparent !important; top:43px !important;">
     <img id="sentenceImage" class="no-border-at-all" src="" alt="Sentence Image" style="border:0 none transparent !important; outline:0 none transparent !important; border-radius:0 !important; box-shadow:none !important; background-color:transparent !important; padding:0; margin:0;" />
     <!-- 동영상 요소는 자바스크립트에서 필요할 때 동적으로 생성됩니다 -->
@@ -50,10 +49,6 @@
   </div>
 
   <!-- 김 효과를 위한 숨겨진 비디오 요소 -->  <video id="coffeeSteamVideo" src="images/coffee6.webm" autoplay loop muted playsinline style="display: none;"></video>
-
-  <!-- 배경음악 자동 재생을 위한 오디오 엘리먼트 -->
-  <audio id="backgroundMusicPlayer" preload="auto" style="display: none;"></audio>
-  
   <script src="bottomImage.js?v=4.6"></script>
   <script src="script.js?v=3.7"></script>
   <script src="dropdown.js?v=1.1"></script>
@@ -265,8 +260,7 @@
         }
         const audioFilePath = `sounds/96_audio/${dropdownMp3Index + 1}.mp3`;
         dropdownMp3Audio = new Audio(audioFilePath);
-        // PC에서만 볼륨을 변경하고 모바일에서는 그대로 유지
-        dropdownMp3Audio.volume = typeof isDesktopDevice === 'function' && isDesktopDevice() ? 0.8 : 0.8;
+        dropdownMp3Audio.volume = 0.8;
         dropdownMp3Audio.onended = () => {
           dropdownSentenceIndex = dropdownMp3Index;
           localStorage.setItem('dropdownSentenceIndex', dropdownSentenceIndex.toString());
@@ -285,7 +279,7 @@
     }
 
     // script.js에서 정의된 initializeSentenceDropdown 함수를 사용합니다.
-    // 여기서는 함수 정의를 제거하고 스크립트 로드 후 자동으로 초기화됩니다
+    // 여기서는 함수 정의를 제거하고 스크립트 로드 후 자동으로 초기화됩니다.
 
     document.getElementById('startBtn').onclick = function() {
       // 드롭다운이 열려있을 때는 START 버튼 기능 비활성화
