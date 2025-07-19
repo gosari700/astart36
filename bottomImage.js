@@ -5,6 +5,14 @@ let isBottomMediaPlaying = true; // 하단 미디어 재생 상태
 let bottomMediaFiles = []; // 정렬된 미디어 파일 목록을 저장할 배열
 let isBottomAudioEnded = false; // 하단 미디어의 오디오가 이미 종료되었는지 여부를 추적
 
+// 미디어 로딩 상태 추적 변수
+let isMediaLoading = false; // 현재 미디어 로딩 중인지 여부
+let mediaLoadQueue = []; // 미디어 로딩 대기열
+
+// 내려가는 애니메이션 추적 변수
+let isSlideDownComplete = true; // 애니메이션 완료 상태
+let mediaIndexAfterSlideDown = 0; // 다음에 표시할 미디어 인덱스
+
 // 전역 변수: 첫 폭발 발생 여부를 추적
 let firstExplosionOccurred = false;
 
@@ -141,8 +149,13 @@ function startBottomMediaShow() {
     
     // 미디어 파일이 있는지 확인
     if (bottomMediaFiles.length > 0) {
-      // 즉시 현재 미디어 표시 시작
-      showCurrentBottomMedia();
+      // 미디어 로딩 중이 아닐 때만 표시
+      if (!isMediaLoading) {
+        showCurrentBottomMedia();
+      } else {
+        console.log("미디어 로딩 중 - 대기열에 추가");
+        mediaLoadQueue.push(() => showCurrentBottomMedia());
+      }
       
       // 이미지의 경우 10초마다, 비디오의 경우 비디오 종료 후 자동으로 다음으로 넘어감
       // 이미지일 경우를 위한 타이머 설정
@@ -640,12 +653,63 @@ function slideDown(element, media, callback, isResuming = false) {
   });
 }
 
-// 내려가는 애니메이션이 완료됐는지 추적하기 위한 변수
-let isSlideDownComplete = true;
-let mediaIndexAfterSlideDown = 0;
+// 내려가는 애니메이션 완료 추적 및 다음 미디어 인덱스를 저장하는 변수
+// isSlideDownComplete와 mediaIndexAfterSlideDown는 전역 스코프에서 이미 선언되었으므로 여기서는 주석 처리
+// let isSlideDownComplete = true;  // 중복 선언 방지
+// let mediaIndexAfterSlideDown = 0;  // 중복 선언 방지
+
+// 미디어 변경 중인지 추적하는 플래그 추가
+let isChangingMedia = false;
+let mediaChangeDebounceTimer = null;
+let mediaChangeBlockCount = 0; // 중복 요청 방지를 위한 카운터
+let lastMediaChangeTime = 0; // 마지막으로 미디어가 변경된 시간
+
+// 모바일 환경 감지
+// 모바일 디바이스 감지 로직 (사용자 에이전트와 화면 크기 모두 고려)
+const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                      (window.innerWidth <= 768) || 
+                      ('ontouchstart' in window) || 
+                      (navigator.maxTouchPoints > 0);
+console.log(`모바일 디바이스 감지: ${isMobileDevice ? '예' : '아니오'}, 화면 크기: ${window.innerWidth}x${window.innerHeight}, 터치 지원: ${'ontouchstart' in window}`);
+
+// 이전 브라우저 세션과 현재 세션을 비교하여 새로고침 여부 확인
+const isPageFreshlyLoaded = (function() {
+  const lastLoadTime = localStorage.getItem('lastPageLoadTime');
+  const currentTime = Date.now();
+  localStorage.setItem('lastPageLoadTime', currentTime);
+  
+  // 마지막 로드 시간이 5분 이내면 기존 세션으로 간주
+  return !lastLoadTime || (currentTime - parseInt(lastLoadTime) > 5 * 60 * 1000);
+})();
+
+// 모바일에서 첫 접속 시 특수 처리
+if (isMobileDevice && isPageFreshlyLoaded) {
+  console.log('모바일 기기에서 처음 접속 - 특수 초기화 수행');
+  // 미디어 초기화 딜레이를 부여하여 안정성 확보
+  setTimeout(() => {
+    console.log('모바일 특수 초기화 완료');
+  }, 800);
+}
 
 // 다음 미디어로 이동
 function moveToNextMedia() {
+  // 현재 시간 체크
+  const now = Date.now();
+  
+  // 마지막 미디어 변경 후 너무 짧은 시간이 지났으면 무시 (모바일에서는 더 긴 시간 필요)
+  const minChangeInterval = isMobileDevice ? 3000 : 1000; // 모바일: 3초, 데스크톱: 1초
+  if (now - lastMediaChangeTime < minChangeInterval) {
+    console.log(`미디어 변경 후 ${(now - lastMediaChangeTime)}ms로 너무 짧은 시간 - 무시 (최소 ${minChangeInterval}ms 필요)`);
+    return;
+  }
+  
+  // 이미 미디어 변경 중이면 무시 (카운터 증가)
+  if (isChangingMedia) {
+    mediaChangeBlockCount++;
+    console.log(`이미 미디어 변경 중 - 중복 호출 무시 (${mediaChangeBlockCount}번째 시도)`);
+    return;
+  }
+  
   // 현재 게임 상태 확인
   const pauseBtn = document.getElementById('pauseBtn');
   const isGamePaused = pauseBtn && pauseBtn.textContent === 'RESUME';
@@ -655,6 +719,22 @@ function moveToNextMedia() {
     console.log("게임 일시정지 상태 - 다음 미디어로 이동하지 않음");
     return;
   }
+  
+  // 미디어 변경 상태로 설정
+  isChangingMedia = true;
+  mediaChangeBlockCount = 0; // 카운터 초기화
+  lastMediaChangeTime = now; // 미디어 변경 시간 기록
+  
+  // 디바운스 타이머 설정 (모바일에서는 더 긴 시간 적용)
+  const debounceTime = isMobileDevice ? 2000 : 1000; // 모바일에서는 2초, 데스크톱에서는 1초
+  
+  if (mediaChangeDebounceTimer) {
+    clearTimeout(mediaChangeDebounceTimer);
+  }
+  mediaChangeDebounceTimer = setTimeout(() => {
+    isChangingMedia = false;
+    console.log("미디어 변경 가능 상태로 전환");
+  }, debounceTime);
   
   // 타이머 정리
   if (bottomMediaTimer) {
@@ -705,7 +785,13 @@ function moveToNextMedia() {
           bottomImageContainer.style.bottom = '-150vh'; // 화면 밖(아래)에서 시작
         }
         
-        showCurrentBottomMedia(); // 내려가는 애니메이션이 끝난 후 바로 다음 미디어를 올림
+        // 로딩 중이 아닐 때만 다음 미디어 표시
+        if (!isMediaLoading) {
+          showCurrentBottomMedia(); // 내려가는 애니메이션이 끝난 후 바로 다음 미디어를 올림
+        } else {
+          console.log("미디어 로딩 중 - 대기열에 추가");
+          mediaLoadQueue.push(() => showCurrentBottomMedia());
+        }
       }
     });
   }
@@ -729,6 +815,11 @@ function stopBottomMediaShow() {
   currentBottomMediaIndex = 0;
   
   // 첫 폭발 상태 초기화
+  firstExplosionOccurred = false;
+  
+  // 로딩 상태 초기화
+  isMediaLoading = false;
+  mediaLoadQueue = [];
   firstExplosionOccurred = false;
 }
 
@@ -982,9 +1073,56 @@ function toggleBottomMediaPause() {
   }
 }
 
+// 중복 미디어 표시 방지를 위한 변수
+let lastShownMediaIndex = -1;
+let lastMediaShowTime = 0;
+
 // 현재 인덱스의 미디어 표시
 function showCurrentBottomMedia() {
   if (!isBottomMediaPlaying || bottomMediaFiles.length === 0) return;
+  
+  // 이미 미디어 변경 중이면 무시
+  if (isChangingMedia) {
+    console.log("미디어 변경 중 - 현재 미디어 표시 무시");
+    return;
+  }
+  
+  // 이미 로딩 중이면 무시
+  if (isMediaLoading) {
+    console.log("이미 미디어 로딩 중 - 무시");
+    return;
+  }
+  
+  // 너무 빠른 시간 내에 같은 인덱스의 미디어를 다시 표시하려는 경우 방지
+  const now = Date.now();
+  
+  // 모바일에서는 더 긴 지연 시간 적용
+  const minShowInterval = isMobileDevice ? 1500 : 600;
+  
+  if (lastShownMediaIndex === currentBottomMediaIndex && now - lastMediaShowTime < minShowInterval) {
+    console.log(`최근에 이미 표시한 미디어(${currentBottomMediaIndex}) 중복 표시 방지 - 무시 (${now - lastMediaShowTime}ms < ${minShowInterval}ms)`);
+    return;
+  }
+  
+  // 이전에 표시한 미디어와 무관하게 최소 대기 시간 적용 (모바일에서는 더 길게)
+  const minIntervalBetweenShows = isMobileDevice ? 2000 : 800;
+  if (now - lastMediaShowTime < minIntervalBetweenShows) {
+    console.log(`미디어 표시 간격이 너무 짧음 - 대기 필요 (${now - lastMediaShowTime}ms < ${minIntervalBetweenShows}ms)`);
+    
+    // 지연 후 다시 시도
+    setTimeout(() => {
+      // 여전히 미디어 변경 중이거나 로딩 중이 아닌 경우에만 재시도
+      if (!isChangingMedia && !isMediaLoading) {
+        console.log("미디어 표시 재시도");
+        showCurrentBottomMedia();
+      }
+    }, minIntervalBetweenShows);
+    return;
+  }
+  
+  // 미디어 표시 시간 및 인덱스 기록
+  lastShownMediaIndex = currentBottomMediaIndex;
+  lastMediaShowTime = now;
   
   // 미디어 파일 정보 가져오기
   const mediaFile = bottomMediaFiles[currentBottomMediaIndex];
@@ -1004,6 +1142,9 @@ function showCurrentBottomMedia() {
   
   // 모든 이전 미디어 요소를 초기화 (새 시작을 위해)
   resetMediaElements();
+  
+  // 로딩 시작
+  isMediaLoading = true;
   
   // 타입에 따라 다른 함수 호출
   if (mediaFile.type === 'image') {
@@ -1047,6 +1188,14 @@ function hideBottomImage() {
   }
 }
 
+// 미디어 로드 대기열 처리
+function processMediaLoadQueue() {
+  if (mediaLoadQueue.length > 0 && !isMediaLoading) {
+    const nextLoad = mediaLoadQueue.shift();
+    nextLoad();
+  }
+}
+
 // 이 함수는 이제 사용하지 않음 (showCurrentBottomMedia로 대체)
 function showBottomMedia(index) {
   console.log("경고: 이전 버전의 showBottomMedia 함수가 호출됨. 대신 showCurrentBottomMedia를 사용하세요.");
@@ -1079,7 +1228,11 @@ function showBottomImageContent(index) {
   const bottomImageContainer = document.getElementById('bottomImageContainer');
   const bottomImage = document.getElementById('bottomImage');
   
-  if (!bottomImage || !bottomImageContainer) return;
+  if (!bottomImage || !bottomImageContainer) {
+    isMediaLoading = false;
+    processMediaLoadQueue();
+    return;
+  }
   
   console.log(`하단 이미지 ${index}.jpg 표시 준비`);
   
@@ -1113,6 +1266,9 @@ function showBottomImageContent(index) {
     
     // DOM이 업데이트될 시간을 주기 위해 약간 지연
     setTimeout(() => {
+      // 로딩 상태 해제 및 대기열 처리
+      isMediaLoading = false;
+      processMediaLoadQueue();
       // 아래에서 올라오는 애니메이션 시작 (반드시 아래에서 시작)
       slideUp(bottomImageContainer, bottomImage);
     }, 50);
@@ -1121,6 +1277,8 @@ function showBottomImageContent(index) {
   bottomImage.onerror = function() {
     console.log(`하단 이미지 ${index}.jpg를 찾을 수 없습니다.`);
     bottomImageContainer.style.display = 'none';
+    isMediaLoading = false;
+    processMediaLoadQueue();
   };
 }
 
@@ -1178,6 +1336,9 @@ function showBottomVideoContent(index) {
     
     // DOM이 업데이트될 시간을 주기 위해 약간 지연
     setTimeout(() => {
+      // 로딩 상태 해제 및 대기열 처리
+      isMediaLoading = false;
+      processMediaLoadQueue();
       // 아래에서 올라오는 애니메이션 시작 (반드시 아래에서 시작)
       slideUp(bottomImageContainer, bottomVideo, () => {
         if (isBottomMediaPlaying) {
@@ -1190,12 +1351,41 @@ function showBottomVideoContent(index) {
   bottomVideo.onerror = function() {
     console.log(`하단 동영상 ${index}.mp4를 찾을 수 없습니다.`);
     bottomImageContainer.style.display = 'none';
+    isMediaLoading = false;
+    processMediaLoadQueue();
   };
   
-  // 비디오가 이미 다음 미디어로 넘어갔는지 확인하기 위한 플래그
+  // 비디오 종료 이벤트 처리 관련 변수들
   let hasMovedToNextMedia = false;
+  let endEventProcessed = false;
+  let endEventTimer = null;
   
-  bottomVideo.onended = function() {
+  // 엔딩 이벤트 처리 함수 (별도로 분리하여 중복 호출 방지)
+  function handleVideoEnd() {
+    // 이미 처리된 이벤트면 무시
+    if (endEventProcessed || isChangingMedia) {
+      console.log('이미 처리된 비디오 종료 이벤트 또는 미디어 변경 중 - 무시');
+      return;
+    }
+    
+    // 미디어 로딩 중이면 무시
+    if (isMediaLoading) {
+      console.log('미디어 로딩 중이므로 종료 이벤트 무시');
+      return;
+    }
+    
+    // 현재 시간과 마지막 미디어 변경 시간의 차이 확인
+    const timeSinceLastChange = Date.now() - lastMediaChangeTime;
+    const minWaitTime = isMobileDevice ? 2500 : 800;
+    
+    if (timeSinceLastChange < minWaitTime) {
+      console.log(`최근 미디어 변경 이후 너무 짧은 시간(${timeSinceLastChange}ms) - 종료 이벤트 무시 (최소 ${minWaitTime}ms 필요)`);
+      return;
+    }
+    
+    // 이벤트 처리 플래그 설정
+    endEventProcessed = true;
+    
     // 비디오가 끝날 때 오디오도 끝났음을 표시
     isBottomAudioEnded = true;
     console.log('하단 비디오 오디오 재생 완료');
@@ -1204,12 +1394,73 @@ function showBottomVideoContent(index) {
     if (isBottomMediaPlaying && !hasMovedToNextMedia) {
       hasMovedToNextMedia = true;
       console.log(`비디오 ${index}.mp4 종료 - 다음 미디어로 넘어감`);
-      moveToNextMedia();
+      
+      // 미디어 변경 요청 (모바일 환경에서는 더 긴 지연시간 적용)
+      const delayTime = isMobileDevice ? 600 : 300;
+      setTimeout(() => {
+        // 실제 변경 전 한번 더 상태 확인
+        if (isChangingMedia) {
+          console.log('미디어 변경 진행 중 - 추가 요청 무시');
+          return;
+        }
+        moveToNextMedia();
+      }, delayTime);
     }
+  }
+  
+  // 이벤트 처리를 위한 추가 변수
+  let endEventCount = 0;
+  
+  bottomVideo.onended = function() {
+    // 중복 호출 횟수 추적
+    endEventCount++;
+    console.log(`비디오 종료 이벤트 발생 (${endEventCount}번째)`);
+    
+    // 종료 이벤트에 대한 디바운싱 처리
+    if (endEventTimer) {
+      clearTimeout(endEventTimer);
+    }
+    
+    // 더 긴 디바운싱 시간 적용 (모바일에서는 훨씬 더 긴 시간)
+    const debounceTime = isMobileDevice ? 500 : 100;
+    
+    // 이미 미디어 변경 중이면 디바운싱 적용하지 않음
+    if (isChangingMedia) {
+      console.log('이미 미디어 변경 중이므로 onended 이벤트 무시');
+      return;
+    }
+    
+    // 미디어 로딩 중이면 디바운싱 적용하지 않음
+    if (isMediaLoading) {
+      console.log('미디어 로딩 중이므로 onended 이벤트 무시');
+      return;
+    }
+    
+    endEventTimer = setTimeout(() => {
+      // 처리 전 한번 더 상태 확인
+      if (isChangingMedia || isMediaLoading) {
+        console.log('처리 직전 상태 확인: 미디어 변경 중이거나 로딩 중이므로 무시');
+        return;
+      }
+      
+      handleVideoEnd();
+      // 이벤트 처리 후 카운터 초기화
+      endEventCount = 0;
+    }, debounceTime);
   };
   
-  // 오디오만 종료되었을 때 플래그 설정
+  // 오디오 트랙 종료 관련 변수들
+  let lastTimeUpdateCheck = 0;
+  
+  // 오디오만 종료되었을 때 플래그 설정 (250ms마다 한 번씩만 체크)
   bottomVideo.addEventListener('timeupdate', function() {
+    // 너무 빈번한 체크 방지 (250ms마다 한 번씩만)
+    const now = Date.now();
+    if (now - lastTimeUpdateCheck < 250) {
+      return;
+    }
+    lastTimeUpdateCheck = now;
+    
     // 오디오 트랙이 있고 재생 중이면서 현재 시간이 오디오 끝에 도달했는지 확인
     if (bottomVideo.duration > 0 && !bottomVideo.paused) {
       const audioTrackEnded = bottomVideo.currentTime >= bottomVideo.duration - 0.5; // 0.5초 여유
@@ -1269,4 +1520,8 @@ function resetBottomMediaElements() {
   const pauseBtn = document.getElementById('pauseBtn');
   const isGamePaused = pauseBtn && pauseBtn.textContent === 'RESUME';
   isBottomMediaPlaying = !isGamePaused;
+  
+  // 로딩 상태 초기화
+  isMediaLoading = false;
+  mediaLoadQueue = [];
 }

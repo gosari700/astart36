@@ -7,6 +7,18 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="turbolinks-cache-control" content="no-cache" />
+  <script>
+    // 첫 접속 시 자동 새로고침 (모바일에서 필요)
+    if (!sessionStorage.getItem('pageRefreshed')) {
+      sessionStorage.setItem('pageRefreshed', 'true');
+      // 로드 완료 후 0.5초 후 새로고침 (리소스 로딩을 기다리기 위해)
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          window.location.reload();
+        }, 500);
+      });
+    }
+  </script>
   <title>Mobile Galaga</title>
   <link rel="stylesheet" href="style.css?v=4.0" />
   <style id="critical-style">
@@ -49,7 +61,7 @@
   </div>
 
   <!-- 김 효과를 위한 숨겨진 비디오 요소 -->  <video id="coffeeSteamVideo" src="images/coffee6.webm" autoplay loop muted playsinline style="display: none;"></video>
-  <script src="bottomImage.js?v=4.6"></script>
+  <script src="bottomImage.js?v=5.3"></script>
   <script src="script.js?v=3.7"></script>
   <script src="dropdown.js?v=1.1"></script>
   <script src="sentenceMediaManager.js?v=1.3"></script>
